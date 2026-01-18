@@ -1,0 +1,2598 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>~/zenith</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #050a05;
+            /* Deep dark green-black */
+            --bg-secondary: #0a140a;
+            --bg-tertiary: #0f1f0f;
+            --fg-primary: #33ff33;
+            /* Classic Hacker Terminal Green */
+            --fg-secondary: #00cc00;
+            --fg-dim: #006600;
+            --border: #004400;
+            --border-bright: #33ff33;
+            --accent: #ccff00;
+            /* Toxic Green/Yellow accent */
+            --warning: #ffff33;
+            --error: #ff3333;
+            --success: #33ff33;
+            --zenith-glow: 0 0 25px rgba(51, 255, 51, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            background: var(--bg-primary);
+            color: var(--fg-primary);
+            font-size: 13px;
+            line-height: 1.4;
+            overflow-x: hidden;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .status-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 28px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 12px;
+            z-index: 1000;
+            font-size: 11px;
+        }
+
+        .status-left,
+        .status-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-icon {
+            color: var(--accent);
+        }
+
+        .status-text {
+            color: var(--fg-primary);
+            font-weight: 600;
+        }
+
+        .status-time {
+            color: var(--fg-secondary);
+        }
+
+        .status-info {
+            color: var(--fg-dim);
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            padding-top: 28px;
+        }
+
+        .side-panel {
+            width: 200px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            font-size: 12px;
+        }
+
+        .panel-header {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-tertiary);
+        }
+
+        .panel-title {
+            color: var(--fg-primary);
+            font-size: 12px;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .panel-nav {
+            padding: 12px 0;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            background: transparent;
+            border: none;
+            color: var(--fg-dim);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-tertiary);
+            color: var(--fg-secondary);
+        }
+
+        .nav-item.active {
+            background: var(--bg-tertiary);
+            border-left-color: var(--fg-primary);
+            color: var(--fg-primary);
+        }
+
+        .nav-marker {
+            color: var(--fg-dim);
+            font-size: 10px;
+            width: 12px;
+        }
+
+        .nav-item.active .nav-marker {
+            color: var(--fg-primary);
+        }
+
+        .main-workspace {
+            flex: 1;
+            background: var(--bg-primary);
+            overflow-y: auto;
+            overflow-x: hidden;
+            height: calc(100vh - 28px);
+        }
+
+        .view {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+        }
+
+        .view.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .workspace-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-secondary);
+            font-size: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .workspace-title {
+            color: var(--fg-primary);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            font-size: 13px;
+        }
+
+        .homepage {
+            padding: 40px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow-y: auto;
+        }
+
+        .hero-section {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            max-width: 800px;
+        }
+
+        .title-line {
+            font-size: 64px;
+            font-weight: 800;
+            color: var(--fg-primary);
+            display: block;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px var(--fg-primary);
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, #00ff9d, #00ffcc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .title-subtitle {
+            font-size: 20px;
+            color: var(--fg-secondary);
+            display: block;
+            font-weight: 400;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .tagline {
+            font-size: 16px;
+            color: var(--fg-dim);
+            max-width: 600px;
+            margin: 0 auto 40px;
+            line-height: 1.6;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn-hero {
+            background: transparent;
+            border: 1px solid var(--fg-primary);
+            color: var(--fg-primary);
+            padding: 12px 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-hero:hover {
+            background: rgba(0, 255, 157, 0.1);
+            box-shadow: var(--zenith-glow);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: var(--fg-primary);
+            box-shadow: var(--zenith-glow);
+        }
+
+        .feature-icon {
+            font-size: 32px;
+            margin-bottom: 15px;
+            color: var(--fg-primary);
+        }
+
+        .feature-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--fg-primary);
+        }
+
+        .feature-desc {
+            font-size: 12px;
+            color: var(--fg-dim);
+            line-height: 1.6;
+        }
+
+        .transition-curtain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-out;
+            background: var(--bg-primary);
+            overflow: hidden;
+        }
+
+        .transition-curtain.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .curtain-column {
+            position: absolute;
+            top: 0;
+            width: 2.5%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        .curtain-char {
+            position: absolute;
+            color: var(--fg-primary);
+            font-size: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            opacity: 0;
+            text-shadow: 0 0 10px var(--fg-primary);
+            white-space: nowrap;
+            animation: fallDown linear;
+        }
+
+        @keyframes fallDown {
+            0% {
+                transform: translateY(-50px) translateX(-50%);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            90% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(calc(100vh + 50px)) translateX(-50%);
+                opacity: 0;
+            }
+        }
+
+        .terminal-container {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 15px;
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            font-size: 10px;
+            color: var(--fg-dim);
+            letter-spacing: 0.5px;
+        }
+
+        .terminal-content {
+            background: var(--bg-secondary);
+            padding: 15px;
+            font-size: 12px;
+        }
+
+        .btn-terminal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--fg-primary);
+            padding: 8px 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 4px;
+        }
+
+        .btn-terminal:hover {
+            border-color: var(--border-bright);
+            background: var(--bg-tertiary);
+        }
+
+        .input-terminal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--fg-primary);
+            padding: 8px 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            outline: none;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .input-terminal:focus {
+            border-color: var(--border-bright);
+        }
+
+        .tool-workspace {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .ambient-view {
+            padding: 20px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .ambient-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            flex: 1;
+        }
+
+        .ambient-sound-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .ambient-sound-item:hover {
+            border-color: var(--fg-primary);
+        }
+
+        .ambient-sound-item.active {
+            background: rgba(0, 255, 157, 0.1);
+            border-color: var(--fg-primary);
+        }
+
+        .sound-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .sound-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--fg-primary);
+        }
+
+        .sound-controls {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .sound-controls input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+            outline: none;
+            accent-color: var(--fg-primary);
+        }
+
+        .sound-volume {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: var(--fg-dim);
+        }
+
+        .ambient-master-controls {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .master-volume {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .master-volume input[type="range"] {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+            accent-color: var(--accent);
+        }
+
+        .dashboard-view {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .quick-stat {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s;
+            cursor: default;
+        }
+
+        .quick-stat.interactive {
+            cursor: pointer;
+        }
+
+        .quick-stat:hover {
+            border-color: var(--fg-primary);
+        }
+
+        .quick-stat-icon {
+            font-size: 20px;
+            color: var(--fg-primary);
+        }
+
+        .quick-stat-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .quick-stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--fg-primary);
+        }
+
+        .quick-stat-label {
+            font-size: 10px;
+            color: var(--fg-dim);
+        }
+
+        .recent-activity {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+        }
+
+        .activity-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--fg-primary);
+        }
+
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            font-size: 12px;
+            color: var(--fg-dim);
+        }
+
+        .activity-text {
+            flex: 1;
+            font-size: 11px;
+            color: var(--fg-primary);
+        }
+
+        .activity-time {
+            font-size: 9px;
+            color: var(--fg-dim);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--bg-secondary);
+        }
+
+        @media (max-width: 1024px) {
+            .title-line {
+                font-size: 48px;
+            }
+
+            .title-subtitle {
+                font-size: 18px;
+            }
+
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .side-panel {
+                position: fixed;
+                left: -100%;
+                top: 28px;
+                height: calc(100vh - 28px);
+                z-index: 1000;
+                transition: left 0.3s;
+            }
+
+            .side-panel.active {
+                left: 0;
+            }
+
+            .title-line {
+                font-size: 36px;
+            }
+
+            .title-subtitle {
+                font-size: 16px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .ambient-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .homepage {
+                padding: 20px;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .module-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .module-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: var(--fg-primary);
+        }
+
+        .module-card:hover {
+            border-color: var(--fg-primary);
+            box-shadow: var(--zenith-glow);
+        }
+
+        .module-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .module-name {
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .tasks-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+
+        .task-checkbox {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--fg-primary);
+            cursor: pointer;
+        }
+
+        .task-text {
+            flex: 1;
+            font-size: 12px;
+        }
+
+        .task-completed {
+            text-decoration: line-through;
+            color: var(--fg-dim);
+            opacity: 0.7;
+        }
+
+        .timer-terminal {
+            text-align: center;
+            padding: 30px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .timer-display {
+            font-size: 64px;
+            font-weight: 700;
+            color: var(--fg-primary);
+            margin: 20px 0;
+            text-shadow: 0 0 20px var(--fg-primary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .timer-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .chat-messages {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            height: 400px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-message {
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            line-height: 1.5;
+            max-width: 80%;
+        }
+
+        .chat-message.user {
+            background: var(--bg-tertiary);
+            align-self: flex-end;
+            border: 1px solid var(--border);
+        }
+
+        .chat-message.assistant {
+            background: var(--bg-primary);
+            align-self: flex-start;
+            border: 1px solid var(--border);
+            border-left: 2px solid var(--fg-primary);
+        }
+
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .note-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 200px;
+        }
+
+        .note-title {
+            font-weight: 600;
+            color: var(--fg-primary);
+            background: transparent;
+            border: none;
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .note-content {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--fg-primary);
+            font-family: inherit;
+            font-size: 12px;
+            resize: none;
+            outline: none;
+            line-height: 1.5;
+        }
+
+        .code-editor {
+            width: 100%;
+            height: 300px;
+            background: #000;
+            color: #0f0;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            resize: vertical;
+        }
+
+        .code-output {
+            background: #111;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 15px;
+            color: #fff;
+            min-height: 100px;
+            font-family: 'JetBrains Mono', monospace;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+
+        .search-result {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            margin-bottom: 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .search-result:hover {
+            border-color: var(--fg-primary);
+            background: var(--bg-tertiary);
+        }
+
+        .search-result img {
+            width: 60px;
+            height: 45px;
+            border-radius: 4px;
+            background-color: var(--bg-tertiary);
+        }
+
+        .search-result div {
+            flex: 1;
+        }
+
+        .search-result strong {
+            font-size: 12px;
+            color: var(--fg-primary);
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .search-result small {
+            font-size: 10px;
+            color: var(--fg-dim);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        /* --- CALENDAR MODAL STYLES --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 14, 20, 0.85);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--fg-primary);
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 0 40px rgba(0, 255, 157, 0.1);
+            transform: translateY(20px);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-weight: 600;
+            color: var(--fg-primary);
+            letter-spacing: 1px;
+        }
+
+        #modalNoteInput {
+            width: 100%;
+            height: 120px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--fg-primary);
+            padding: 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            resize: none;
+            outline: none;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        #modalNoteInput:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(0, 255, 157, 0.1);
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* --- HACKER ANIMATIONS --- */
+
+        /* 1. Hero Title Glitch Flicker */
+        @keyframes flicker {
+
+            0%,
+            19.999%,
+            22%,
+            62.999%,
+            64%,
+            64.999%,
+            70%,
+            100% {
+                opacity: 1;
+                text-shadow: 0 0 15px var(--fg-primary);
+            }
+
+            20%,
+            21.999%,
+            63%,
+            63.999%,
+            65%,
+            69.999% {
+                opacity: 0.3;
+                text-shadow: none;
+            }
+        }
+
+        .hero-title .title-line {
+            animation: flicker 4s infinite alternate;
+        }
+
+        /* 2. Slide Up & Fade In Entry */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero-section {
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        /* Staggered animation for feature cards */
+        .features-grid .feature-card {
+            opacity: 0;
+            /* Hidden initially */
+            animation: fadeInUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .features-grid .feature-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .features-grid .feature-card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .features-grid .feature-card:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .features-grid .feature-card:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+
+        /* 3. Cyberpunk Hover Effects */
+        .feature-card {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+
+        /* Green scanline sweep on hover */
+        .feature-card::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(51, 255, 51, 0.1), transparent);
+            transition: 0.5s;
+            z-index: -1;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-7px) scale(1.02);
+            border-color: var(--fg-primary);
+            box-shadow: var(--zenith-glow);
+            background: var(--bg-tertiary);
+        }
+
+        .feature-card:hover::after {
+            left: 100%;
+        }
+
+        .feature-card:hover .feature-icon {
+            transform: scale(1.1) rotate(5deg);
+            text-shadow: 0 0 15px var(--fg-primary);
+            transition: transform 0.3s ease;
+        }
+
+        /* Button Glow Hover */
+        .btn-hero {
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .btn-hero::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background: var(--fg-primary);
+            transition: width 0.3s ease;
+            z-index: -1;
+        }
+
+        .btn-hero:hover {
+            color: var(--bg-primary);
+            box-shadow: 0 0 20px var(--fg-primary);
+            font-weight: 700;
+        }
+
+        .btn-hero:hover::before {
+            width: 100%;
+        }
+
+        /* --- LIGHT MODE VARIABLES --- */
+        body.light-mode {
+            --bg-primary: #f0f2f5;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #e4e6eb;
+            --fg-primary: #006644;
+            /* Darker green for readability */
+            --fg-secondary: #004d33;
+            --fg-dim: #5c7c6e;
+            --border: #ccd0d5;
+            --border-bright: #00ff9d;
+            --accent: #00cc7a;
+            --zenith-glow: 0 0 10px rgba(0, 102, 68, 0.1);
+        }
+
+        /* Fix specific elements in light mode for better contrast */
+        body.light-mode .timer-display {
+            text-shadow: none;
+            color: var(--fg-secondary);
+        }
+
+        body.light-mode .title-line {
+            text-shadow: none;
+            background: none;
+            -webkit-text-fill-color: var(--fg-secondary);
+            color: var(--fg-secondary);
+        }
+
+        body.light-mode .hero-title .title-line {
+            animation: none;
+            opacity: 1;
+        }
+
+        /* --- REACT BITS INSPIRED: DECRYPTION EFFECT --- */
+
+        /* 1. Reset the title container (Remove old brackets) */
+        .title-line {
+            display: block !important;
+            position: relative;
+            margin: 0 0 10px 0;
+            padding: 0;
+            /* Monospace is crucial for the character shuffle to look good */
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--fg-primary);
+            cursor: default;
+            /* Encourages user to hover */
+        }
+
+        /* 2. Remove the previous pseudo-elements */
+        .title-line::before,
+        .title-line::after {
+            content: none !important;
+            display: none !important;
+        }
+
+        /* 3. Add a subtle glowing cursor effect */
+        .title-line:hover {
+            color: #fff;
+            /* Flash white on hover */
+            text-shadow: 0 0 10px var(--fg-primary), 0 0 20px var(--fg-primary);
+            transition: color 0.1s;
+        }
+
+        /* --- UPDATED TITLE WITH SIDE ANIMATIONS --- */
+
+        /* 1. Update the main title container */
+        .title-line {
+            display: inline-block !important;
+            /* Forces it to hug the text so we can position sides */
+            position: relative;
+            margin: 0 20px 10px 20px;
+            /* Add margin so animations don't hit the edge */
+        }
+
+        /* 2. Left Animation: Terminal Prompt */
+        .title-line::before {
+            content: ">_";
+            position: absolute;
+            left: -50px;
+            /* Position to the left */
+            top: 0;
+            color: var(--accent);
+            /* Uses your Toxic Green accent */
+            font-weight: 400;
+            opacity: 0;
+            text-shadow: 0 0 10px var(--accent);
+            animation: slideInLeft 0.8s 0.2s forwards, blink 1.5s infinite;
+        }
+
+        /* 3. Right Animation: Closing Tag */
+        .title-line::after {
+            content: "_<";
+            position: absolute;
+            right: -50px;
+            /* Position to the right */
+            top: 0;
+            color: var(--accent);
+            font-weight: 400;
+            opacity: 0;
+            text-shadow: 0 0 10px var(--accent);
+            animation: slideInRight 0.8s 0.2s forwards, blink 1.5s infinite;
+        }
+
+        /* 4. Animation Keyframes */
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+                text-shadow: 0 0 15px var(--accent);
+            }
+
+            50% {
+                opacity: 0.3;
+                text-shadow: none;
+            }
+        }
+
+        /* --- BOLD MATRIX BACKGROUND --- */
+        .zenith-matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            /* Behind everything */
+            pointer-events: none;
+            opacity: 0.8;
+            /* HIGH VISIBILITY */
+        }
+
+        /* Ensure content panels have backgrounds so text remains readable */
+        /* --- TRANSPARENT LAYERS FOR MATRIX VISIBILITY --- */
+        .homepage,
+        .tool-workspace,
+        .dashboard-view,
+        .ambient-view,
+        .side-panel,
+        .status-bar {
+            position: relative;
+            z-index: 2;
+            /* CHANGED: 0.6 = 60% opacity. Lower this number (e.g. 0.4) to make it more transparent */
+            background-color: rgba(5, 10, 5, 0.6) !important;
+            backdrop-filter: blur(2px);
+        }
+
+        /* Make sure the main container allows the fixed bg to show */
+        .app-container,
+        .main-workspace {
+            background: transparent !important;
+        }
+
+        /* --- THEME PRESETS --- */
+
+        /* 1. HACKER (Default Green) */
+        :root,
+        body[data-theme="hacker"] {
+            --bg-primary: #0a0e14;
+            --bg-secondary: #151920;
+            --bg-tertiary: #1e2329;
+            --fg-primary: #00ff9d;
+            --fg-secondary: #00cc7a;
+            --fg-dim: #006644;
+            --border: #003322;
+            --accent: #00ffcc;
+            --panel-bg: rgba(21, 25, 32, 0.95);
+            --zenith-glow: 0 0 20px rgba(0, 255, 157, 0.2);
+        }
+
+        /* 2. OCEAN (Deep Blue & Cyan) */
+        body[data-theme="ocean"] {
+            --bg-primary: #050a14;
+            --bg-secondary: #0a1420;
+            --bg-tertiary: #0f1f30;
+            --fg-primary: #00d9ff;
+            --fg-secondary: #0088cc;
+            --fg-dim: #004466;
+            --border: #003344;
+            --accent: #00ffff;
+            --panel-bg: rgba(10, 20, 32, 0.95);
+            --zenith-glow: 0 0 20px rgba(0, 217, 255, 0.2);
+        }
+
+        /* 3. SUNSET (Purple & Orange) */
+        body[data-theme="sunset"] {
+            --bg-primary: #140505;
+            --bg-secondary: #200a0a;
+            --bg-tertiary: #300f0f;
+            --fg-primary: #ff9d00;
+            --fg-secondary: #cc4400;
+            --fg-dim: #662200;
+            --border: #441100;
+            --accent: #ffcc00;
+            --panel-bg: rgba(32, 10, 10, 0.95);
+            --zenith-glow: 0 0 20px rgba(255, 157, 0, 0.2);
+        }
+
+        /* 4. DRACULA (Purple & Pink) */
+        body[data-theme="dracula"] {
+            --bg-primary: #0f0a14;
+            --bg-secondary: #191020;
+            --bg-tertiary: #241530;
+            --fg-primary: #ff79c6;
+            --fg-secondary: #bd93f9;
+            --fg-dim: #6272a4;
+            --border: #442255;
+            --accent: #ff5555;
+            --panel-bg: rgba(25, 16, 32, 0.95);
+            --zenith-glow: 0 0 20px rgba(255, 121, 198, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="transition-curtain" id="transitionCurtain"></div>
+
+    <div class="status-bar">
+        <div class="status-left">
+            <button class="btn-terminal" id="menuToggle" style="padding: 4px 8px; font-size: 10px; display: none;">
+                <i class="fas fa-bars"></i>
+            </button>
+            <span class="status-icon">◉</span>
+            <span class="status-text">ZENITH</span>
+            <span class="status-info">v2.1</span>
+        </div>
+        <div class="status-center">
+            <span class="status-time" id="systemTime">00:00</span>
+        </div>
+        <div class="status-right">
+            <select id="themeSelector" class="input-terminal" style="margin-right: 10px; cursor: pointer;">
+                <option value="hacker">HACKER (GREEN)</option>
+                <option value="ocean">OCEAN (BLUE)</option>
+                <option value="sunset">SUNSET (ORANGE)</option>
+                <option value="dracula">DRACULA (PINK)</option>
+            </select>
+            <span class="status-info" id="focusScore">FOCUS: 85%</span>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <aside class="side-panel" id="sidePanel">
+            <div class="panel-header">
+                <span class="panel-title">ZENITH MODULES</span>
+            </div>
+            <nav class="panel-nav">
+                <button class="nav-item active" data-view="home">
+                    <span class="nav-marker">></span><i class="fas fa-home"></i><span>HOME</span>
+                </button>
+                <button class="nav-item" data-view="dashboard">
+                    <span class="nav-marker">></span><i class="fas fa-tachometer-alt"></i><span>DASHBOARD</span>
+                </button>
+                <button class="nav-item" data-view="ambient">
+                    <span class="nav-marker">></span><i class="fas fa-sliders-h"></i><span>AMBIENT MIXER</span>
+                </button>
+                <button class="nav-item" data-view="pomodoro">
+                    <span class="nav-marker">></span><i class="fas fa-clock"></i><span>FOCUS TIMER</span>
+                </button>
+                <button class="nav-item" data-view="tasks">
+                    <span class="nav-marker">></span><i class="fas fa-tasks"></i><span>TASKS</span>
+                </button>
+                <button class="nav-item" data-view="notes">
+                    <span class="nav-marker">></span><i class="fas fa-sticky-note"></i><span>NOTES</span>
+                </button>
+                <button class="nav-item" data-view="ai">
+                    <span class="nav-marker">></span><i class="fas fa-robot"></i><span>AI ASSISTANT</span>
+                </button>
+                <button class="nav-item" data-view="code">
+                    <span class="nav-marker">></span><i class="fas fa-code"></i><span>CODE EDITOR</span>
+                </button>
+                <button class="nav-item" data-view="music">
+                    <span class="nav-marker">></span><i class="fas fa-music"></i><span>MUSIC</span>
+                </button>
+                <button class="nav-item" data-view="calculator">
+                    <span class="nav-marker">></span><i class="fas fa-calculator"></i><span>CALCULATOR</span>
+                </button>
+                <button class="nav-item" data-view="calendar">
+                    <span class="nav-marker">></span><i class="fas fa-calendar"></i><span>CALENDAR</span>
+                </button>
+                <button class="nav-item" data-view="links">
+                    <span class="nav-marker">></span><i class="fas fa-link"></i><span>QUICK LINKS</span>
+                </button>
+            </nav>
+        </aside>
+
+        <main class="main-workspace">
+            <div class="view active" id="view-home">
+                <div class="homepage">
+                    <div class="hero-section">
+                        <div class="hero-title">
+                            <span class="title-line">ZENITH</span>
+                            <span class="title-subtitle">Your All-in-One Digital Workspace</span>
+                        </div>
+                        <div class="tagline">
+                            The ultimate productivity suite combining essential tools into one seamless,
+                            distraction-free interface.
+                        </div>
+                        <div class="cta-buttons">
+                            <button class="btn-hero" id="getStartedBtn"><i class="fas fa-rocket"></i> GET
+                                STARTED</button>
+                        </div>
+                    </div>
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <div class="feature-icon"><i class="fas fa-brain"></i></div>
+                            <div class="feature-title">AI-Powered Assistant</div>
+                            <div class="feature-desc">Integrated AI chat with real-time assistance.</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon"><i class="fas fa-sliders-h"></i></div>
+                            <div class="feature-title">Ambient Focus Mixer</div>
+                            <div class="feature-desc">Customizable ambient sounds for concentration.</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon"><i class="fas fa-code"></i></div>
+                            <div class="feature-title">Advanced Code Editor</div>
+                            <div class="feature-desc">Multi-language support with live preview.</div>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                            <div class="feature-title">Productivity Analytics</div>
+                            <div class="feature-desc">Track focus time and task completion.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="view" id="view-dashboard">
+                <div class="workspace-header">
+                    <span class="workspace-title">[DASHBOARD]</span>
+                    <button class="btn-terminal" id="refreshDashboard"><i class="fas fa-sync"></i> REFRESH</button>
+                </div>
+                <div class="dashboard-view">
+                    <div class="quick-stats">
+                        <div class="quick-stat">
+                            <div class="quick-stat-icon"><i class="fas fa-clock"></i></div>
+                            <div class="quick-stat-content">
+                                <div class="quick-stat-value" id="focusTime">2h 45m</div>
+                                <div class="quick-stat-label">FOCUS TIME</div>
+                            </div>
+                        </div>
+                        <div class="quick-stat">
+                            <div class="quick-stat-icon"><i class="fas fa-tasks"></i></div>
+                            <div class="quick-stat-content">
+                                <div class="quick-stat-value" id="tasksCompleted">8/12</div>
+                                <div class="quick-stat-label">TASKS COMPLETED</div>
+                            </div>
+                        </div>
+                        <div class="quick-stat">
+                            <div class="quick-stat-icon"><i class="fas fa-brain"></i></div>
+                            <div class="quick-stat-content">
+                                <div class="quick-stat-value" id="productivityScore">85%</div>
+                                <div class="quick-stat-label">PRODUCTIVITY</div>
+                            </div>
+                        </div>
+                        <div class="quick-stat interactive" id="hydrationCard">
+                            <div class="quick-stat-icon"><i class="fas fa-tint"></i></div>
+                            <div class="quick-stat-content">
+                                <div class="quick-stat-value" id="hydrationCount">4</div>
+                                <div class="quick-stat-label">HYDRATION (CLICK)</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="module-grid" id="quickAccessModules"></div>
+                </div>
+            </div>
+
+            <div class="view" id="view-ambient">
+                <div class="workspace-header">
+                    <span class="workspace-title">[AMBIENT MIXER]</span>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-terminal" id="playAllSounds"><i class="fas fa-play"></i> PLAY ALL</button>
+                        <button class="btn-terminal" id="stopAllSounds"><i class="fas fa-stop"></i> STOP ALL</button>
+                    </div>
+                </div>
+                <div class="ambient-view">
+                    <div class="ambient-grid" id="ambientSoundsGrid"></div>
+                    <div class="ambient-master-controls">
+                        <div class="master-volume">
+                            <span><i class="fas fa-volume-up"></i> MASTER VOLUME</span>
+                            <input type="range" id="masterVolume" min="0" max="100" value="50">
+                            <span id="masterVolumeValue">50%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="view" id="view-pomodoro">
+                <div class="workspace-header"><span class="workspace-title">[FOCUS TIMER]</span></div>
+                <div class="tool-workspace">
+                    <div class="timer-terminal">
+                        <div class="timer-display" id="pomodoroDisplay">25:00</div>
+                        <div class="timer-controls">
+                            <button class="btn-terminal" id="pomodoroStart"><i class="fas fa-play"></i> START</button>
+                            <button class="btn-terminal" id="pomodoroPause" disabled><i class="fas fa-pause"></i>
+                                PAUSE</button>
+                            <button class="btn-terminal" id="pomodoroReset"><i class="fas fa-redo"></i> RESET</button>
+                        </div>
+                        <div
+                            style="display: flex; gap: 20px; justify-content: center; margin-top: 20px; color: var(--fg-dim); font-size: 12px;">
+                            <label>WORK: <input type="number" id="workDuration" value="25" class="input-terminal"
+                                    style="width: 60px;"> min</label>
+                            <label>BREAK: <input type="number" id="breakDuration" value="5" class="input-terminal"
+                                    style="width: 60px;"> min</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="view" id="view-tasks">
+                <div class="workspace-header"><span class="workspace-title">[TASK MANAGER]</span>
+                    <div style="display: flex; gap: 10px;"><button class="btn-terminal" id="addTaskBtn"><i
+                                class="fas fa-plus"></i> ADD TASK</button><button class="btn-terminal"
+                            id="clearCompletedTasks"><i class="fas fa-trash"></i> CLEAR</button></div>
+                </div>
+                <div class="tool-workspace">
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <input type="text" id="taskInput" class="input-terminal" placeholder="Enter new task..."
+                            style="flex: 1;">
+                        <button class="btn-terminal" id="quickAddTaskBtn"><i class="fas fa-plus"></i> ADD</button>
+                    </div>
+                    <div id="tasksList" class="tasks-list"></div>
+                </div>
+            </div>
+
+            <div class="view" id="view-notes">
+                <div class="workspace-header"><span class="workspace-title">[NOTES]</span><button class="btn-terminal"
+                        id="addNoteBtn"><i class="fas fa-plus"></i> ADD NOTE</button></div>
+                <div class="tool-workspace">
+                    <div id="notesGrid" class="notes-grid"></div>
+                </div>
+            </div>
+
+            <div class="view" id="view-ai">
+                <div class="workspace-header"><span class="workspace-title">[AI ASSISTANT]</span><select id="aiModel"
+                        class="input-terminal">
+                        <option value="pollinations">POLLINATIONS.AI</option>
+                        <option value="mock">MOCK</option>
+                    </select></div>
+                <div class="tool-workspace">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="chat-message assistant"><strong>Zenith AI</strong><br>Hello! How can I help you?
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <input type="text" id="chatInput" class="input-terminal" placeholder="Ask AI..."
+                            style="flex: 1;">
+                        <button class="btn-terminal" id="sendChatBtn">SEND</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="view" id="view-code">
+                <div class="workspace-header">
+                    <span class="workspace-title">[CODE EDITOR]</span>
+                    <div style="display: flex; gap: 10px;">
+                        <select id="languageSelect" class="input-terminal">
+                            <option value="javascript">JavaScript</option>
+                            <option value="html">HTML (Preview)</option>
+                        </select>
+                        <button class="btn-terminal" id="runCodeBtn"><i class="fas fa-play"></i> RUN</button>
+                    </div>
+                </div>
+                <div class="tool-workspace">
+                    <textarea id="codeEditor" class="code-editor"
+                        placeholder="// Write your code here...">console.log("Welcome to Zenith Code Editor!");</textarea>
+                    <div style="font-size: 11px; color: var(--fg-dim); margin-bottom: 10px;">Output / Preview:</div>
+                    <div id="codeOutput" class="code-output"></div>
+                    <div id="htmlPreview"
+                        style="display:none; background: #151920; height: 300px; border-radius:4px; overflow:hidden; border:1px solid var(--border);">
+                    </div>
+                </div>
+            </div>
+
+            <div class="view" id="view-music">
+                <div class="workspace-header">
+                    <span class="workspace-title">[MUSIC PLAYER]</span>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span id="playerStatus" style="color: var(--fg-dim); font-size: 11px;">Ready</span>
+                        <button class="btn-terminal" id="playMusicBtn"><i class="fas fa-play"></i> PLAY</button>
+                        <button class="btn-terminal" id="pauseMusicBtn" style="display: none;"><i
+                                class="fas fa-pause"></i> PAUSE</button>
+                        <span style="margin-left: 10px; color: var(--fg-dim); font-size: 11px;">Vol:</span>
+                        <input type="range" id="volumeControl" min="0" max="100" value="50" class="input-terminal"
+                            style="width: 100px;">
+                    </div>
+                </div>
+                <div class="tool-workspace">
+                    <div id="searchResults" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;"></div>
+                    <div
+                        style="background: var(--bg-secondary); border: 1px solid var(--border); padding: 15px; border-radius: 6px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-music" style="color: var(--fg-primary);"></i>
+                            <span id="nowPlaying" style="color: var(--fg-primary); font-weight: 600;">Not playing</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="view" id="view-calculator">
+                <div class="workspace-header"><span class="workspace-title">[CALCULATOR]</span><button
+                        class="btn-terminal" id="clearCalculator">CLEAR</button></div>
+                <div class="tool-workspace">
+                    <div style="max-width: 300px; margin: 0 auto;">
+                        <div id="calcDisplay"
+                            style="background: var(--bg-secondary); border: 1px solid var(--border); padding: 15px; font-size: 24px; text-align: right; margin-bottom: 10px; border-radius: 4px; min-height: 60px; display: flex; align-items: center; justify-content: flex-end;">
+                            0</div>
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;">
+                            <button class="btn-terminal" data-calc="clear">C</button><button class="btn-terminal"
+                                data-calc="backspace">←</button><button class="btn-terminal"
+                                data-calc="%">%</button><button class="btn-terminal" data-calc="/">/</button>
+                            <button class="btn-terminal" data-calc="7">7</button><button class="btn-terminal"
+                                data-calc="8">8</button><button class="btn-terminal" data-calc="9">9</button><button
+                                class="btn-terminal" data-calc="*">×</button>
+                            <button class="btn-terminal" data-calc="4">4</button><button class="btn-terminal"
+                                data-calc="5">5</button><button class="btn-terminal" data-calc="6">6</button><button
+                                class="btn-terminal" data-calc="-">-</button>
+                            <button class="btn-terminal" data-calc="1">1</button><button class="btn-terminal"
+                                data-calc="2">2</button><button class="btn-terminal" data-calc="3">3</button><button
+                                class="btn-terminal" data-calc="+">+</button>
+                            <button class="btn-terminal" data-calc="0" style="grid-column: span 2;">0</button><button
+                                class="btn-terminal" data-calc=".">.</button><button class="btn-terminal" data-calc="="
+                                style="background: var(--fg-primary); color: var(--bg-primary);">=</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="view" id="view-calendar">
+                <div class="workspace-header"><span class="workspace-title">[CALENDAR]</span>
+                    <div style="display: flex; gap: 10px;"><button class="btn-terminal" id="prevMonth">
+                            << /button><button class="btn-terminal" id="todayBtn">TODAY</button><button
+                                    class="btn-terminal" id="nextMonth">></button></div>
+                </div>
+                <div class="tool-workspace">
+                    <div id="calendarContainer" style="padding: 20px;"></div>
+                </div>
+            </div>
+
+            <div class="view" id="view-links">
+                <div class="workspace-header"><span class="workspace-title">[QUICK LINKS]</span></div>
+                <div class="tool-workspace">
+                    <div id="linksGrid" class="module-grid"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        class AudioEngine {
+            constructor() {
+                this.ctx = null;
+                this.sources = {};
+                this.masterGain = null;
+            }
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    this.masterGain = this.ctx.createGain();
+                    this.masterGain.connect(this.ctx.destination);
+                    this.masterGain.gain.value = 0.5;
+                }
+                if (this.ctx.state === 'suspended') { this.ctx.resume(); }
+            }
+            createNoiseBuffer() {
+                const bufferSize = this.ctx.sampleRate * 2;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                return buffer;
+            }
+            playWhiteNoise(id, volume = 0.5) {
+                this.init();
+                if (this.sources[id]) return;
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = this.createNoiseBuffer();
+                noise.loop = true;
+                const gain = this.ctx.createGain();
+                gain.gain.value = volume * 0.1;
+                noise.connect(gain);
+                gain.connect(this.masterGain);
+                noise.start();
+                this.sources[id] = { node: noise, gain: gain };
+            }
+            playPinkNoise(id, volume = 0.5) {
+                this.init();
+                if (this.sources[id]) return;
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = this.createNoiseBuffer();
+                noise.loop = true;
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 400;
+                const gain = this.ctx.createGain();
+                gain.gain.value = volume * 0.15;
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.masterGain);
+                noise.start();
+                this.sources[id] = { node: noise, gain: gain };
+            }
+            playOscillator(id, type, freq, volume = 0.5) {
+                this.init();
+                if (this.sources[id]) return;
+                const osc = this.ctx.createOscillator();
+                osc.type = type;
+                osc.frequency.value = freq;
+                const gain = this.ctx.createGain();
+                gain.gain.value = volume * 0.05;
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start();
+                this.sources[id] = { node: osc, gain: gain };
+            }
+            stop(id) {
+                if (this.sources[id]) {
+                    this.sources[id].node.stop();
+                    delete this.sources[id];
+                }
+            }
+            setVolume(id, val) {
+                if (this.sources[id]) this.sources[id].gain.gain.value = val * 0.002;
+            }
+            setMasterVolume(val) {
+                if (this.masterGain) this.masterGain.gain.value = val;
+            }
+        }
+        // --- BOLD MATRIX RAIN SYSTEM ---
+        class ZenithMatrixSystem {
+            constructor() {
+                this.canvas = null;
+                this.ctx = null;
+                this.columns = [];
+                this.fontSize = 24;
+                this.drops = [];
+                this.chars = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+                // --- CONFIGURATION ---
+                this.fps = 10; // Slow speed
+                this.frameInterval = 1000 / this.fps;
+                this.lastFrameTime = 0;
+
+                // VISIBILITY SETTING:
+                // Higher number = More empty space & longer delay between drops
+                // 100 = Normal, 300 = Sparse, 500 = Very Sparse
+                this.sparsity = 400;
+            }
+
+            init() {
+                this.canvas = document.createElement('canvas');
+                this.canvas.className = 'zenith-matrix-bg';
+                document.body.prepend(this.canvas);
+
+                this.ctx = this.canvas.getContext('2d');
+                this.resize();
+                this.createDrops();
+
+                window.addEventListener('resize', () => {
+                    this.resize();
+                    this.createDrops();
+                });
+
+                this.animate(0);
+            }
+
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+
+            createDrops() {
+                const columns = Math.ceil(this.canvas.width / this.fontSize);
+                this.drops = [];
+                for (let i = 0; i < columns; i++) {
+                    // Start drops scattered far above the screen for a natural start
+                    this.drops[i] = Math.random() * -this.sparsity;
+                }
+            }
+
+            animate(timestamp) {
+                requestAnimationFrame((t) => this.animate(t));
+
+                const elapsed = timestamp - this.lastFrameTime;
+                if (elapsed < this.frameInterval) return;
+                this.lastFrameTime = timestamp - (elapsed % this.frameInterval);
+
+                // 1. Clear the screen a bit more aggressively to prevent clutter
+                this.ctx.fillStyle = 'rgba(5, 10, 5, 0.2)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                this.ctx.fillStyle = '#0F0';
+                this.ctx.font = '700 ' + this.fontSize + 'px "JetBrains Mono"';
+
+                for (let i = 0; i < this.drops.length; i++) {
+                    // SPARSITY CHECK: 
+                    // Only draw every 3rd column to create "Distance" between lines
+                    if (i % 3 !== 0) continue;
+
+                    const text = this.chars.charAt(Math.floor(Math.random() * this.chars.length));
+                    const x = i * this.fontSize;
+                    const y = this.drops[i] * this.fontSize;
+
+                    // Only draw if it's actually on screen (optimizes performance)
+                    if (y > 0 && y < this.canvas.height) {
+                        if (Math.random() > 0.98) {
+                            this.ctx.fillStyle = '#FFF';
+                        } else {
+                            this.ctx.fillStyle = '#0F0';
+                        }
+                        this.ctx.fillText(text, x, y);
+                    }
+
+                    // RESET LOGIC (The "Time Delay")
+                    // When it hits bottom, send it way back up (-sparsity)
+                    if (y > this.canvas.height && Math.random() > 0.975) {
+                        this.drops[i] = Math.random() * -this.sparsity;
+                    }
+
+                    this.drops[i]++;
+                }
+            }
+        }
+
+        class ZenithApp {
+            constructor() {
+                this.currentView = 'home';
+                this.tasks = JSON.parse(localStorage.getItem('zenith_tasks')) || [];
+                this.notes = JSON.parse(localStorage.getItem('zenith_notes')) || [];
+
+                // CHANGED: Added '_v2' to the key to force your new links to load
+                // UPDATED: Changed key to 'v3' to force the new links to load
+                this.links = JSON.parse(localStorage.getItem('zenith_links_v3')) || [
+                    { name: 'GitHub', url: 'https://github.com', icon: 'fab fa-github' },
+                    { name: 'Gmail', url: 'https://mail.google.com', icon: 'fas fa-envelope' },
+                    { name: 'Notion', url: 'https://notion.so', icon: 'fas fa-sticky-note' },
+                    { name: 'YouTube', url: 'https://youtube.com', icon: 'fab fa-youtube' },
+                    { name: 'Stack Overflow', url: 'https://stackoverflow.com', icon: 'fab fa-stack-overflow' },
+                    { name: 'LinkedIn', url: 'https://linkedin.com', icon: 'fab fa-linkedin' },
+                    { name: 'Discord', url: 'https://discord.com', icon: 'fab fa-discord' },
+                    { name: 'Spotify', url: 'https://open.spotify.com', icon: 'fab fa-spotify' }
+                ];
+                this.isLightMode = localStorage.getItem('zenith_theme') === 'light';
+                if (this.isLightMode) {
+                    document.body.classList.add('light-mode');
+                }
+                this.calendarNotes = JSON.parse(localStorage.getItem('zenith_calendar_notes')) || {};
+                this.calendarDate = new Date();
+                this.audioEngine = new AudioEngine();
+                this.init();
+            }
+
+            init() {
+                this.setupNavigation();
+                this.setupEventListeners();
+                this.updateSystemTime();
+                this.loadQuickAccessModules();
+                this.renderTasks();
+                this.renderNotes();
+                this.renderLinks();
+                this.setupAmbientMixer();
+                this.setupCalculator();
+                this.setupCalendar();
+                this.setupMusicPlayer();
+                this.setupHackerTitle();
+                this.setupHydration();
+                new ZenithMatrixSystem().init();
+                this.setupTheme();
+
+                setInterval(() => this.updateSystemTime(), 1000);
+            }
+
+            // --- INSERT THIS METHOD INSIDE YOUR ZenithApp CLASS ---
+
+            setupHackerTitle() {
+                const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890@#$%&";
+                const element = document.querySelector(".title-line");
+
+                if (!element) return;
+
+                // Store original text
+                element.dataset.value = element.innerText;
+
+                element.onmouseover = event => {
+                    let iterations = 0;
+                    const interval = setInterval(() => {
+                        event.target.innerText = event.target.innerText
+                            .split("")
+                            .map((letter, index) => {
+                                if (index < iterations) {
+                                    return event.target.dataset.value[index];
+                                }
+                                return letters[Math.floor(Math.random() * letters.length)];
+                            })
+                            .join("");
+
+                        if (iterations >= event.target.dataset.value.length) {
+                            clearInterval(interval);
+                        }
+
+                        iterations += 1 / 3; // Controls speed (higher denominator = slower)
+                    }, 30);
+                }
+            }
+
+            setupNavigation() {
+                const menuToggle = document.getElementById('menuToggle');
+                const sidePanel = document.getElementById('sidePanel');
+                if (window.innerWidth <= 768) {
+                    menuToggle.style.display = 'block';
+                    menuToggle.addEventListener('click', () => sidePanel.classList.toggle('active'));
+                }
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        this.switchView(item.dataset.view);
+                        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                        item.classList.add('active');
+                        if (window.innerWidth <= 768) sidePanel.classList.remove('active');
+                    });
+                });
+                document.getElementById('getStartedBtn')?.addEventListener('click', () => {
+                    const db = document.querySelector('.nav-item[data-view="dashboard"]');
+                    if (db) db.click();
+                });
+            }
+
+            setupEventListeners() {
+                document.getElementById('addTaskBtn')?.addEventListener('click', () => {
+                    document.querySelector('.nav-item[data-view="tasks"]').click();
+                    setTimeout(() => document.getElementById('taskInput').focus(), 100);
+                });
+                // Theme Toggle
+                document.getElementById('themeToggle')?.addEventListener('click', () => this.toggleTheme());
+                document.getElementById('quickAddTaskBtn')?.addEventListener('click', () => this.addTask());
+                document.getElementById('taskInput')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') this.addTask(); });
+                document.getElementById('clearCompletedTasks')?.addEventListener('click', () => this.clearCompletedTasks());
+                document.getElementById('addNoteBtn')?.addEventListener('click', () => this.addNote());
+                document.getElementById('sendChatBtn')?.addEventListener('click', () => this.sendChatMessage());
+                document.getElementById('chatInput')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') this.sendChatMessage(); });
+                document.getElementById('runCodeBtn')?.addEventListener('click', () => this.runCode());
+                document.getElementById('pomodoroStart')?.addEventListener('click', () => this.startTimer());
+                document.getElementById('pomodoroPause')?.addEventListener('click', () => this.pauseTimer());
+                document.getElementById('pomodoroReset')?.addEventListener('click', () => this.resetTimer());
+                document.getElementById('refreshDashboard')?.addEventListener('click', () => this.refreshDashboard());
+            }
+
+            setupHydration() {
+                const card = document.getElementById('hydrationCard');
+                if (card) {
+                    card.addEventListener('click', () => {
+                        const el = document.getElementById('hydrationCount');
+                        const current = parseInt(el.textContent) || 0;
+                        el.textContent = current + 1;
+                        this.showNotification('💧 Hydration Recorded!');
+                    });
+                }
+            }
+
+            switchView(viewName) {
+                if (this.currentView === viewName) return;
+                this.showTransition(() => {
+                    document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+                    const targetView = document.getElementById(`view-${viewName}`);
+                    if (targetView) {
+                        targetView.classList.add('active');
+                        this.currentView = viewName;
+                    }
+                });
+            }
+
+            showTransition(callback) {
+                const curtain = document.getElementById('transitionCurtain');
+                if (!curtain) { if (callback) callback(); return; }
+                curtain.innerHTML = '';
+                curtain.classList.add('active');
+                const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789';
+                const columnCount = 40;
+                for (let i = 0; i < columnCount; i++) {
+                    const column = document.createElement('div');
+                    column.className = 'curtain-column';
+                    column.style.left = `${(i / columnCount) * 100}%`;
+                    column.style.width = `${100 / columnCount}%`;
+                    for (let j = 0; j < 25; j++) {
+                        const char = document.createElement('div');
+                        char.className = 'curtain-char';
+                        char.textContent = chars[Math.floor(Math.random() * chars.length)];
+                        char.style.left = '50%';
+                        char.style.top = `${-20 - (j * 50)}px`;
+                        const speed = 0.5;
+                        const delay = (i * 0.015) + (j * 0.03);
+                        char.style.animationDuration = `${speed}s`;
+                        char.style.animationDelay = `${delay}s`;
+                        column.appendChild(char);
+                    }
+                    curtain.appendChild(column);
+                }
+                setTimeout(() => {
+                    if (callback) callback();
+                    setTimeout(() => {
+                        curtain.classList.remove('active');
+                        setTimeout(() => { curtain.innerHTML = ''; }, 300);
+                    }, 300);
+                }, 800);
+            }
+
+            updateSystemTime() {
+                const now = new Date();
+                const el = document.getElementById('systemTime');
+                if (el) el.textContent = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+            }
+
+            loadQuickAccessModules() {
+                const modules = [
+                    { module: 'ambient', name: 'Ambient Mixer', icon: 'fas fa-sliders-h' },
+                    { module: 'pomodoro', name: 'Focus Timer', icon: 'fas fa-clock' },
+                    { module: 'tasks', name: 'Task Manager', icon: 'fas fa-tasks' },
+                    { module: 'notes', name: 'Notes', icon: 'fas fa-sticky-note' },
+                    { module: 'ai', name: 'AI Assistant', icon: 'fas fa-robot' },
+                    { module: 'code', name: 'Code Editor', icon: 'fas fa-code' },
+                    { module: 'calculator', name: 'Calculator', icon: 'fas fa-calculator' },
+                    { module: 'calendar', name: 'Calendar', icon: 'fas fa-calendar' }
+                ];
+                const container = document.getElementById('quickAccessModules');
+                if (!container) return;
+                container.innerHTML = modules.map(mod => `
+                    <div class="module-card" onclick="document.querySelector('.nav-item[data-view=\\'${mod.module}\\']').click()">
+                        <div class="module-icon"><i class="${mod.icon}"></i></div>
+                        <div class="module-name">${mod.name}</div>
+                    </div>
+                `).join('');
+            }
+
+            addTask() {
+                const input = document.getElementById('taskInput');
+                const text = input.value.trim();
+                if (!text) return;
+                this.tasks.unshift({ id: Date.now(), text: text, completed: false });
+                this.saveTasks(); this.renderTasks(); input.value = '';
+                this.showNotification('Task added');
+            }
+            renderTasks() {
+                const container = document.getElementById('tasksList');
+                if (!container) return;
+                container.innerHTML = this.tasks.map(task => `
+                    <div class="task-item">
+                        <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="zenithApp.toggleTask(${task.id})">
+                        <div class="task-text ${task.completed ? 'task-completed' : ''}">${task.text}</div>
+                        <button class="btn-terminal" style="padding: 4px 8px; font-size: 10px;" onclick="zenithApp.deleteTask(${task.id})"><i class="fas fa-times"></i></button>
+                    </div>
+                `).join('');
+            }
+            toggleTask(id) { const t = this.tasks.find(t => t.id === id); if (t) { t.completed = !t.completed; this.saveTasks(); this.renderTasks(); } }
+            deleteTask(id) { this.tasks = this.tasks.filter(t => t.id !== id); this.saveTasks(); this.renderTasks(); }
+            clearCompletedTasks() { this.tasks = this.tasks.filter(t => !t.completed); this.saveTasks(); this.renderTasks(); }
+            saveTasks() { localStorage.setItem('zenith_tasks', JSON.stringify(this.tasks)); }
+
+            addNote() { this.notes.unshift({ id: Date.now(), title: 'New Note', content: '' }); this.saveNotes(); this.renderNotes(); }
+            renderNotes() {
+                const container = document.getElementById('notesGrid');
+                if (!container) return;
+                container.innerHTML = this.notes.map(note => `
+                    <div class="note-item">
+                        <input type="text" class="note-title" value="${note.title}" onchange="zenithApp.updateNoteTitle(${note.id}, this.value)">
+                        <textarea class="note-content" oninput="zenithApp.updateNoteContent(${note.id}, this.value)">${note.content}</textarea>
+                        <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                            <button class="btn-terminal" style="padding: 4px 8px; font-size: 10px;" onclick="zenithApp.deleteNote(${note.id})"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            updateNoteTitle(id, val) { const n = this.notes.find(n => n.id === id); if (n) { n.title = val; this.saveNotes(); } }
+            updateNoteContent(id, val) { const n = this.notes.find(n => n.id === id); if (n) { n.content = val; this.saveNotes(); } }
+            deleteNote(id) { if (confirm('Delete?')) { this.notes = this.notes.filter(n => n.id !== id); this.saveNotes(); this.renderNotes(); } }
+            saveNotes() { localStorage.setItem('zenith_notes', JSON.stringify(this.notes)); }
+
+            setupAmbientMixer() {
+                const sounds = [
+                    { id: 'white', name: 'White Noise', icon: '📻', type: 'white' },
+                    { id: 'rain', name: 'Rain', icon: '🌧️', type: 'pink' },
+                    { id: 'ocean', name: 'Ocean', icon: '🌊', type: 'brown' },
+                    { id: 'space', name: 'Deep Space', icon: '🚀', type: 'sine' },
+                    { id: 'meditate', name: 'Meditate', icon: '🧘', type: 'triangle' }
+                ];
+                const grid = document.getElementById('ambientSoundsGrid');
+                if (!grid) return;
+                grid.innerHTML = sounds.map(sound => `
+                    <div class="ambient-sound-item" data-id="${sound.id}" data-type="${sound.type}">
+                        <div class="sound-icon">${sound.icon}</div>
+                        <div class="sound-name">${sound.name}</div>
+                        <div class="sound-controls"><input type="range" min="0" max="100" value="50" class="vol-slider"></div>
+                        <button class="btn-terminal" style="margin-top: 10px;">PLAY</button>
+                    </div>
+                `).join('');
+                grid.querySelectorAll('.ambient-sound-item').forEach(item => {
+                    const playBtn = item.querySelector('button');
+                    const slider = item.querySelector('.vol-slider');
+                    const id = item.dataset.id;
+                    const type = item.dataset.type;
+                    playBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (playBtn.textContent === 'STOP') {
+                            playBtn.textContent = 'PLAY'; item.classList.remove('active'); this.audioEngine.stop(id);
+                        } else {
+                            playBtn.textContent = 'STOP'; item.classList.add('active');
+                            if (type === 'white') this.audioEngine.playWhiteNoise(id, slider.value);
+                            else if (type === 'pink') this.audioEngine.playPinkNoise(id, slider.value);
+                            else if (type === 'brown') this.audioEngine.playPinkNoise(id, slider.value * 0.5);
+                            else if (type === 'sine') this.audioEngine.playOscillator(id, 'sine', 60, slider.value);
+                            else if (type === 'triangle') this.audioEngine.playOscillator(id, 'triangle', 150, slider.value);
+                        }
+                    });
+                    slider.addEventListener('input', (e) => { e.stopPropagation(); this.audioEngine.setVolume(id, e.target.value); });
+                });
+                document.getElementById('masterVolume')?.addEventListener('input', (e) => {
+                    document.getElementById('masterVolumeValue').textContent = `${e.target.value}%`;
+                    this.audioEngine.setMasterVolume(e.target.value / 100);
+                });
+                document.getElementById('playAllSounds')?.addEventListener('click', () => {
+                    grid.querySelectorAll('.ambient-sound-item').forEach(item => { if (!item.classList.contains('active')) item.querySelector('button').click(); });
+                });
+                document.getElementById('stopAllSounds')?.addEventListener('click', () => {
+                    grid.querySelectorAll('.ambient-sound-item').forEach(item => { if (item.classList.contains('active')) item.querySelector('button').click(); });
+                });
+            }
+
+            startTimer() {
+                if (this.timerInterval) return;
+                let duration = parseInt(document.getElementById('workDuration').value) * 60;
+                const display = document.getElementById('pomodoroDisplay');
+                document.getElementById('pomodoroStart').disabled = true;
+                document.getElementById('pomodoroPause').disabled = false;
+                this.timerInterval = setInterval(() => {
+                    duration--;
+                    const m = Math.floor(duration / 60).toString().padStart(2, '0');
+                    const s = (duration % 60).toString().padStart(2, '0');
+                    display.textContent = `${m}:${s}`;
+                    if (duration <= 0) { this.resetTimer(); this.showNotification('Timer Finished!'); }
+                }, 1000);
+            }
+            pauseTimer() {
+                clearInterval(this.timerInterval); this.timerInterval = null;
+                document.getElementById('pomodoroStart').disabled = false;
+                document.getElementById('pomodoroPause').disabled = true;
+            }
+            resetTimer() {
+                clearInterval(this.timerInterval); this.timerInterval = null;
+                document.getElementById('pomodoroStart').disabled = false;
+                document.getElementById('pomodoroPause').disabled = true;
+                document.getElementById('pomodoroDisplay').textContent = `${document.getElementById('workDuration').value.padStart(2, '0')}:00`;
+            }
+
+            async sendChatMessage() {
+                const input = document.getElementById('chatInput');
+                const msg = input.value.trim();
+                if (!msg) return;
+                const box = document.getElementById('chatMessages');
+                box.innerHTML += `<div class="chat-message user"><strong>You</strong><br>${msg}</div>`;
+                input.value = ''; box.scrollTop = box.scrollHeight;
+                const loading = document.createElement('div');
+                loading.className = 'chat-message assistant';
+                loading.textContent = 'Thinking...';
+                box.appendChild(loading);
+                const model = document.getElementById('aiModel').value;
+                let response = "";
+                if (model === 'mock') {
+                    const rs = ["Interesting.", "I can help with that.", "Added to tasks."];
+                    response = rs[Math.floor(Math.random() * rs.length)];
+                } else {
+                    try {
+                        const r = await fetch(`https://text.pollinations.ai/${encodeURIComponent(msg)}`);
+                        response = r.ok ? await r.text() : "Error";
+                    } catch (e) { response = "Service Unavailable"; }
+                }
+                box.removeChild(loading);
+                box.innerHTML += `<div class="chat-message assistant"><strong>Zenith AI</strong><br>${response}</div>`;
+                box.scrollTop = box.scrollHeight;
+            }
+
+            runCode() {
+                const code = document.getElementById('codeEditor').value;
+                const lang = document.getElementById('languageSelect').value;
+                const out = document.getElementById('codeOutput');
+                const prev = document.getElementById('htmlPreview');
+                prev.style.display = 'none'; out.style.display = 'block';
+                if (lang === 'html') {
+                    out.style.display = 'none'; prev.style.display = 'block'; prev.innerHTML = '';
+                    const iframe = document.createElement('iframe');
+                    iframe.style.cssText = 'width: 100%; height: 100%; border: none; background: #151920;';
+                    prev.appendChild(iframe);
+                    const doc = iframe.contentWindow.document;
+                    doc.open();
+                    doc.write(`<style>body{background-color:#151920;color:#00ff9d;font-family:'Courier New';margin:20px;}</style>${code}`);
+                    doc.close();
+                    return;
+                }
+                try {
+                    if (lang === 'javascript') {
+                        const oldLog = console.log; let log = '';
+                        console.log = (...args) => { log += args.join(' ') + '\n'; };
+                        eval(code); console.log = oldLog;
+                        out.textContent = log || 'Executed.';
+                    }
+                } catch (e) { out.textContent = `Error: ${e.message}`; out.style.color = '#ff3366'; }
+            }
+
+            setupCalculator() {
+                let cur = '0', prev = '', op = null, reset = false;
+                const disp = document.getElementById('calcDisplay');
+                const update = () => disp.textContent = cur;
+                const calc = () => {
+                    if (!op || !prev) return;
+                    const p = parseFloat(prev), c = parseFloat(cur);
+                    if (isNaN(p) || isNaN(c)) return;
+                    let res = 0;
+                    if (op === '+') res = p + c; else if (op === '-') res = p - c;
+                    else if (op === '*') res = p * c; else if (op === '/') res = p / c;
+                    else if (op === '%') res = p % c;
+                    cur = res.toString(); op = null; prev = ''; reset = true; update();
+                };
+                document.querySelectorAll('[data-calc]').forEach(b => {
+                    b.addEventListener('click', () => {
+                        const v = b.dataset.calc;
+                        if (v === 'clear') { cur = '0'; prev = ''; op = null; }
+                        else if (v === 'backspace') cur = cur.slice(0, -1) || '0';
+                        else if (v === '=') calc();
+                        else if (['+', '-', '*', '/', '%'].includes(v)) { op = v; prev = cur; reset = true; }
+                        else {
+                            if (reset || cur === '0') { cur = v; reset = false; } else cur += v;
+                        }
+                        update();
+                    });
+                });
+            }
+
+            setupCalendar() {
+                // 1. Inject Modal HTML automatically if it doesn't exist
+                if (!document.getElementById('calendarModal')) {
+                    const modalHTML = `
+                        <div id="calendarModal" class="modal-overlay">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <span id="modalDateTitle">EDIT NOTE</span>
+                                    <button class="btn-terminal" id="closeModalBtn" style="border:none;background:transparent;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <textarea id="modalNoteInput" placeholder="Enter tasks or notes for this day..."></textarea>
+                                <div class="modal-buttons">
+                                    <button id="deleteNoteBtn" class="btn-terminal" style="border-color:#ff3366;color:#ff3366;">DELETE</button>
+                                    <button id="saveNoteBtn" class="btn-terminal" style="background:var(--fg-primary);color:var(--bg-primary);">SAVE NOTE</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+                    // Attach Listeners
+                    document.getElementById('closeModalBtn').addEventListener('click', () => this.closeModal());
+                    document.getElementById('saveNoteBtn').addEventListener('click', () => this.saveModalNote());
+                    document.getElementById('deleteNoteBtn').addEventListener('click', () => this.deleteModalNote());
+                    document.getElementById('calendarModal').addEventListener('click', (e) => {
+                        if (e.target.id === 'calendarModal') this.closeModal();
+                    });
+                }
+
+                // 2. Render Calendar Function
+                this.renderCalendar = () => {
+                    const container = document.getElementById('calendarContainer');
+                    if (!container) return;
+
+                    const date = this.calendarDate;
+                    const month = date.getMonth();
+                    const year = date.getFullYear();
+
+                    const firstDay = new Date(year, month, 1).getDay();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                    let html = `
+                        <div style="text-align:center;margin-bottom:20px;font-weight:bold;font-size:14px;color:var(--fg-primary);letter-spacing:1px;">
+                            ${date.toLocaleDateString('default', { month: 'long', year: 'numeric' })}
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center;">
+                    `;
+
+                    ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(d => {
+                        html += `<div style="padding:8px;background:var(--bg-tertiary);font-size:11px;color:var(--fg-dim);border-radius:2px;">${d}</div>`;
+                    });
+
+                    for (let i = 0; i < firstDay; i++) html += `<div></div>`;
+
+                    const today = new Date();
+                    for (let i = 1; i <= daysInMonth; i++) {
+                        const dateKey = `${year}-${month + 1}-${i}`;
+                        const hasNote = this.calendarNotes[dateKey];
+                        const isToday = i === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+
+                        let bg = isToday ? 'var(--fg-dim)' : (hasNote ? 'rgba(0, 255, 157, 0.05)' : 'var(--bg-secondary)');
+                        let border = isToday ? 'var(--fg-primary)' : (hasNote ? 'var(--accent)' : 'var(--border)');
+                        let color = isToday ? '#fff' : 'var(--fg-primary)';
+                        const indicator = hasNote ? `<div style="width:4px;height:4px;background:var(--accent);border-radius:50%;margin:4px auto 0;box-shadow:0 0 5px var(--accent);"></div>` : '';
+
+                        html += `
+                            <div onclick="zenithApp.handleDateClick(${i})" 
+                                 style="padding:10px;background:${bg};border:1px solid ${border};border-radius:4px;cursor:pointer;transition:all 0.2s;min-height:45px;display:flex;flex-direction:column;justify-content:center;color:${color};">
+                                <span style="font-weight:${isToday ? '700' : '400'}">${i}</span>
+                                ${indicator}
+                            </div>`;
+                    }
+                    html += `</div>`;
+                    container.innerHTML = html;
+                };
+
+                this.renderCalendar();
+
+                // Navigation Listeners
+                const prevBtn = document.getElementById('prevMonth');
+                const nextBtn = document.getElementById('nextMonth');
+                const todayBtn = document.getElementById('todayBtn');
+
+                if (prevBtn) {
+                    const newPrev = prevBtn.cloneNode(true);
+                    prevBtn.parentNode.replaceChild(newPrev, prevBtn);
+                    newPrev.addEventListener('click', () => { this.calendarDate.setMonth(this.calendarDate.getMonth() - 1); this.renderCalendar(); });
+                }
+                if (nextBtn) {
+                    const newNext = nextBtn.cloneNode(true);
+                    nextBtn.parentNode.replaceChild(newNext, nextBtn);
+                    newNext.addEventListener('click', () => { this.calendarDate.setMonth(this.calendarDate.getMonth() + 1); this.renderCalendar(); });
+                }
+                if (todayBtn) {
+                    const newToday = todayBtn.cloneNode(true);
+                    todayBtn.parentNode.replaceChild(newToday, todayBtn);
+                    newToday.addEventListener('click', () => { this.calendarDate = new Date(); this.renderCalendar(); });
+                }
+            }
+
+            // New: Open Modal instead of Prompt
+            handleDateClick(day) {
+                const date = this.calendarDate;
+                this.currentSelectedDateKey = `${date.getFullYear()}-${date.getMonth() + 1}-${day}`;
+
+                // Populate Modal
+                const note = this.calendarNotes[this.currentSelectedDateKey] || '';
+                document.getElementById('modalNoteInput').value = note;
+                document.getElementById('modalDateTitle').textContent = `${date.toLocaleString('default', { month: 'long' })} ${day}, ${date.getFullYear()}`.toUpperCase();
+
+                // Show Modal
+                const modal = document.getElementById('calendarModal');
+                modal.style.display = 'flex';
+                setTimeout(() => modal.classList.add('active'), 10);
+                setTimeout(() => document.getElementById('modalNoteInput').focus(), 100);
+            }
+
+            // New: Helper methods for Modal
+            closeModal() {
+                const modal = document.getElementById('calendarModal');
+                modal.classList.remove('active');
+                setTimeout(() => modal.style.display = 'none', 300);
+            }
+
+            saveModalNote() {
+                const note = document.getElementById('modalNoteInput').value.trim();
+                if (note) {
+                    this.calendarNotes[this.currentSelectedDateKey] = note;
+                    this.showNotification('Note Saved');
+                } else {
+                    delete this.calendarNotes[this.currentSelectedDateKey];
+                }
+                localStorage.setItem('zenith_calendar_notes', JSON.stringify(this.calendarNotes));
+                this.renderCalendar();
+                this.closeModal();
+            }
+
+            deleteModalNote() {
+                if (this.calendarNotes[this.currentSelectedDateKey]) {
+                    if (confirm('Delete note for this day?')) {
+                        delete this.calendarNotes[this.currentSelectedDateKey];
+                        localStorage.setItem('zenith_calendar_notes', JSON.stringify(this.calendarNotes));
+                        this.renderCalendar();
+                        this.closeModal();
+                        this.showNotification('Note Deleted');
+                    }
+                } else {
+                    this.closeModal();
+                }
+            }
+
+            setupMusicPlayer() {
+                const tracks = [
+                    { id: '1', title: 'Lofi Chill', artist: 'Lofi Study', url: 'https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3' },
+                    { id: '2', title: 'Heavy Rain', artist: 'Nature', url: 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg' },
+                    { id: '3', title: 'Deep Focus', artist: 'Zenith', url: 'https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3?id=3' }
+                ];
+                const container = document.getElementById('searchResults');
+                container.innerHTML = tracks.map(t => `
+                    <div class="search-result" onclick="zenithApp.playTrack('${t.url}', '${t.title}')">
+                        <div style="width:40px;height:40px;background:var(--bg-tertiary);display:flex;align-items:center;justify-content:center;border-radius:4px;"><i class="fas fa-music"></i></div>
+                        <div><strong>${t.title}</strong><small>${t.artist}</small></div>
+                        <i class="fas fa-play" style="color:var(--fg-dim);"></i>
+                    </div>
+                `).join('');
+                const audio = new Audio(); audio.crossOrigin = "anonymous";
+                const btn = document.getElementById('playMusicBtn');
+                const pause = document.getElementById('pauseMusicBtn');
+                const stat = document.getElementById('playerStatus');
+                const np = document.getElementById('nowPlaying');
+
+                this.playTrack = (url, title) => {
+                    audio.pause(); audio.currentTime = 0;
+                    np.textContent = "Loading..."; stat.textContent = "Buffering...";
+                    audio.src = url; audio.load();
+                    audio.play().then(() => {
+                        np.textContent = title; stat.textContent = "Playing";
+                        btn.style.display = 'none'; pause.style.display = 'inline-block';
+                    }).catch(e => {
+                        console.error(e); np.textContent = "Error"; stat.textContent = "Failed";
+                        if (e.name !== 'AbortError') alert("Playback Error: " + e.message);
+                    });
+                };
+                btn.addEventListener('click', () => { if (audio.src) { audio.play(); btn.style.display = 'none'; pause.style.display = 'inline-block'; stat.textContent = "Playing"; } });
+                pause.addEventListener('click', () => { audio.pause(); pause.style.display = 'none'; btn.style.display = 'inline-block'; stat.textContent = "Paused"; });
+                document.getElementById('volumeControl').addEventListener('input', (e) => audio.volume = e.target.value / 100);
+                audio.onended = () => { pause.style.display = 'none'; btn.style.display = 'inline-block'; stat.textContent = "Finished"; };
+            }
+
+            renderLinks() {
+                document.getElementById('linksGrid').innerHTML = this.links.map(l => `
+                    <a href="${l.url}" target="_blank" class="module-card">
+                        <div class="module-icon"><i class="${l.icon}"></i></div><div class="module-name">${l.name}</div>
+                    </a>
+                `).join('');
+            }
+            showNotification(msg) {
+                const n = document.createElement('div');
+                n.style.cssText = `position:fixed;top:40px;right:20px;background:var(--bg-secondary);border:1px solid var(--fg-primary);padding:10px;color:var(--fg-primary);animation:slideIn 0.3s;z-index:9999;`;
+                n.textContent = msg; document.body.appendChild(n); setTimeout(() => n.remove(), 3000);
+            }
+            refreshDashboard() { this.showNotification('Dashboard Updated'); }
+            setupTheme() {
+                const selector = document.getElementById('themeSelector');
+
+                // 1. Load saved theme or default to 'hacker'
+                const savedTheme = localStorage.getItem('zenith_theme_preset') || 'hacker';
+                document.body.setAttribute('data-theme', savedTheme);
+                if (selector) selector.value = savedTheme;
+
+                // 2. Listen for changes
+                if (selector) {
+                    selector.addEventListener('change', (e) => {
+                        const newTheme = e.target.value;
+                        document.body.setAttribute('data-theme', newTheme);
+                        localStorage.setItem('zenith_theme_preset', newTheme);
+
+                        // Optional: Re-render background animation to pick up new colors
+                        // (Assuming you are using the ZenithConstellation class I gave you earlier)
+                        if (this.constellation) {
+                            this.constellation.animate();
+                        }
+                    });
+                }
+            }
+        }
+
+        let zenithApp;
+        document.addEventListener('DOMContentLoaded', () => {
+            zenithApp = new ZenithApp();
+            window.zenithApp = zenithApp;
+        });
+    </script>
+</body>
+
+</html>
